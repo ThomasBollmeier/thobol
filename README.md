@@ -1,2 +1,2 @@
-# thobol
-THOBOL - Yet another programming language
+# THOBOL  
+Yet another (toy) programming language
