@@ -51,11 +51,21 @@ impl TokenType {
         }
     }
 
+    fn camel_case_to_snake_upper_case(s: &str) -> String {
+        let mut snake_case = String::new();
+        for (i, c) in s.chars().enumerate() {
+            if c.is_uppercase() && i != 0 {
+                snake_case.push('_');
+            }
+            snake_case.push(c.to_ascii_uppercase());
+        }
+        snake_case
+    }
 }
 
 impl Into<String> for TokenType {
     fn into(self) -> String {
-        format!("{:?}", self)
+        Self::camel_case_to_snake_upper_case(&format!("{:?}", self))
     }
 }
 
@@ -64,8 +74,8 @@ mod tests {
 
     #[test]
     fn test_token_type_to_string() {
-        let token_type = TokenType::Integer;
+        let token_type = TokenType::LeftParen;
         let token_type_string: String = token_type.into();
-        assert_eq!(token_type_string, "Integer");
+        assert_eq!(token_type_string, "LEFT_PAREN");
     }
 }
