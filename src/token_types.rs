@@ -12,6 +12,9 @@ pub enum TokenType {
     Caret,
     LeftParen,
     RightParen,
+    LeftSquareBracket,
+    RightSquareBracket,
+    Comma,
     Identifier,
     Begin,
     End,
@@ -19,6 +22,8 @@ pub enum TokenType {
     Else,
     Cond,
     Def,
+    Fun,
+    Lambda,
     RightArrow,
     RightFatArrow,
     LeftArrow,
@@ -42,6 +47,8 @@ impl TokenType {
             "else" => Some(TokenType::Else),
             "cond" => Some(TokenType::Cond),
             "def" => Some(TokenType::Def),
+            "fun" => Some(TokenType::Fun),
+            "lambda" | "λ" => Some(TokenType::Lambda),
             "and" => Some(TokenType::And),
             "or" => Some(TokenType::Or),
             "not" => Some(TokenType::Not),
@@ -70,6 +77,7 @@ impl Into<String> for TokenType {
 }
 
 mod tests {
+    #[allow(unused_imports)]
     use super::*;
 
     #[test]

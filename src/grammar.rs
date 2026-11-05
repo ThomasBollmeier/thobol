@@ -16,47 +16,212 @@ pub fn create_grammar() -> Grammar {
   });
   
   grammar.add_rule("definition", false, |g| {
-    g.rule_ref("var_definition")
+    choice(vec![
+      g.rule_ref("var_definition"),
+      g.rule_ref("fun_definition"),
+    ])
   });
   
   grammar.add_rule("var_definition", false, |g| {
     seq(vec![
       tok("DEF"),
-      tok_id("IDENTIFIER", "name"),
+      tok("IDENTIFIER"),
+      g.rule_ref("expression"),
+    ])
+  });
+  
+  grammar.add_rule("fun_definition", false, |g| {
+    seq(vec![
+      tok("FUN"),
+      tok("IDENTIFIER"),
+      g.rule_ref("parameters"),
+      g.rule_ref("expression"),
+    ])
+  });
+  
+  grammar.add_rule("parameters", false, |g| {
+    seq(vec![
+      tok("LEFT_SQUARE_BRACKET"),
       opt(
         seq(vec![
-          tok("LEFT_PAREN"),
+          tok_id("IDENTIFIER", "param"),
           many(
-            tok_id("IDENTIFIER", "param")
+            seq(vec![
+              opt(
+                tok("COMMA")
+              ),
+              tok_id("IDENTIFIER", "param"),
+            ])
           ),
-          tok("RIGHT_PAREN"),
         ])
       ),
-      g.rule_ref_id("expression", "body"),
+      tok("RIGHT_SQUARE_BRACKET"),
     ])
   });
   
   grammar.add_rule("expression", false, |g| {
-    g.rule_ref("sum")
+    choice(vec![
+      g.rule_ref("block_expression"),
+      g.rule_ref("assignment"),
+    ])
+  });
+  
+  grammar.add_rule("block_expression", false, |g| {
+    seq(vec![
+      tok("BEGIN"),
+      many(
+        g.rule_ref_id("definition", "item")
+      ),
+      one_or_more(
+        g.rule_ref_id("expression", "item")
+      ),
+      tok("END"),
+    ])
+  });
+  
+  grammar.add_rule("assignment", false, |g| {
+    choice(vec![
+      seq(vec![
+        tok_id("IDENTIFIER", "target"),
+        tok("LEFT_ARROW"),
+        g.rule_ref_id("comparison", "source"),
+      ]),
+      seq(vec![
+        g.rule_ref_id("comparison", "source"),
+        opt(
+          seq(vec![
+            tok("RIGHT_ARROW"),
+            tok_id("IDENTIFIER", "target"),
+          ])
+        ),
+      ]),
+    ])
+  });
+  
+  grammar.add_rule("comparison", false, |g| {
+    seq(vec![
+      g.rule_ref_id("sum", "left"),
+      opt(
+        seq(vec![
+          choice(vec![
+            tok_id("EQUAL", "op"),
+            tok_id("NOT_EQUAL", "op"),
+            tok_id("LESS_THAN", "op"),
+            tok_id("LESS_THAN_OR_EQUAL", "op"),
+            tok_id("GREATER_THAN", "op"),
+            tok_id("GREATER_THAN_OR_EQUAL", "op"),
+          ]),
+          g.rule_ref_id("sum", "right"),
+        ])
+      ),
+    ])
   });
   
   grammar.add_rule("sum", false, |g| {
     seq(vec![
-      g.rule_ref_id("term", "term"),
+      g.rule_ref_id("product", "term"),
       many(
         seq(vec![
           choice(vec![
             tok_id("PLUS", "op"),
             tok_id("MINUS", "op"),
           ]),
-          g.rule_ref_id("term", "term"),
+          g.rule_ref_id("product", "term"),
         ])
       ),
     ])
   });
   
-  grammar.add_rule("term", false, |g| {
-    g.rule_ref("atomic")
+  grammar.add_rule("product", false, |g| {
+    seq(vec![
+      g.rule_ref_id("power", "fact"),
+      many(
+        seq(vec![
+          choice(vec![
+            tok_id("MULTIPLY", "op"),
+            tok_id("DIVIDE", "op"),
+          ]),
+          g.rule_ref_id("power", "fact"),
+        ])
+      ),
+    ])
+  });
+  
+  grammar.add_rule("power", false, |g| {
+    seq(vec![
+      g.rule_ref_id("primary", "base"),
+      opt(
+        seq(vec![
+          tok_id("CARET", "op"),
+          g.rule_ref_id("power", "exponent"),
+        ])
+      ),
+    ])
+  });
+  
+  grammar.add_rule("primary", false, |g| {
+    choice(vec![
+      seq(vec![
+        tok("LEFT_PAREN"),
+        g.rule_ref("assignment"),
+        tok("RIGHT_PAREN"),
+      ]),
+      g.rule_ref("if_expression"),
+      g.rule_ref("cond_expression"),
+      g.rule_ref("lambda_expression"),
+      g.rule_ref("atomic"),
+    ])
+  });
+  
+  grammar.add_rule("if_expression", false, |g| {
+    seq(vec![
+      tok("IF"),
+      g.rule_ref_id("expression", "condition"),
+      g.rule_ref_id("expression", "then_branch"),
+      opt(
+        seq(vec![
+          tok("ELSE"),
+          g.rule_ref_id("expression", "else_branch"),
+        ])
+      ),
+      tok("END"),
+    ])
+  });
+  
+  grammar.add_rule("cond_expression", false, |g| {
+    seq(vec![
+      tok("COND"),
+      many(
+        g.rule_ref("cond_arm")
+      ),
+      opt(
+        g.rule_ref("default_arm")
+      ),
+      tok("END"),
+    ])
+  });
+  
+  grammar.add_rule("cond_arm", false, |g| {
+    seq(vec![
+      g.rule_ref_id("expression", "condition"),
+      tok("RIGHT_FAT_ARROW"),
+      g.rule_ref_id("expression", "result"),
+    ])
+  });
+  
+  grammar.add_rule("default_arm", false, |g| {
+    seq(vec![
+      tok("ELSE"),
+      g.rule_ref_id("expression", "result"),
+    ])
+  });
+  
+  grammar.add_rule("lambda_expression", false, |g| {
+    seq(vec![
+      tok("LAMBDA"),
+      g.rule_ref("parameters"),
+      g.rule_ref("expression"),
+    ])
   });
   
   grammar.add_rule("atomic", false, |g| {
@@ -65,7 +230,33 @@ pub fn create_grammar() -> Grammar {
       tok("REAL"),
       tok("BOOL"),
       tok("STRING"),
-      tok("IDENTIFIER"),
+      tok("NIL"),
+      seq(vec![
+        tok("IDENTIFIER"),
+        many(
+          g.rule_ref_id("arguments", "args")
+        ),
+      ]),
+    ])
+  });
+  
+  grammar.add_rule("arguments", false, |g| {
+    seq(vec![
+      tok("LEFT_SQUARE_BRACKET"),
+      opt(
+        seq(vec![
+          g.rule_ref_id("comparison", "argument"),
+          many(
+            seq(vec![
+              opt(
+                tok("COMMA")
+              ),
+              g.rule_ref_id("comparison", "argument"),
+            ])
+          ),
+        ])
+      ),
+      tok("RIGHT_SQUARE_BRACKET"),
     ])
   });
   

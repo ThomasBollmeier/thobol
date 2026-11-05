@@ -211,6 +211,9 @@ impl TokenStream for Lexer {
                 '^' => return Some(Token::new(TokenType::Caret, ch, line, column)),
                 '(' => return Some(Token::new(TokenType::LeftParen, ch, line, column)),
                 ')' => return Some(Token::new(TokenType::RightParen, ch, line, column)),
+                '[' => return Some(Token::new(TokenType::LeftSquareBracket, ch, line, column)),
+                ']' => return Some(Token::new(TokenType::RightSquareBracket, ch, line, column)),
+                ',' => return Some(Token::new(TokenType::Comma, ch, line, column)),
                 '<' => return Some(self.scan_less_or_others(line, column)),
                 '>' => return Some(self.scan_greater_or_others(line, column)),
                 '=' => return Some(self.scan_equal_or_others(line, column)),
@@ -230,6 +233,7 @@ impl TokenStream for Lexer {
 }
 
 mod tests {
+    #[allow(unused_imports)]
     use super::*;
 
     #[test]
@@ -259,6 +263,8 @@ mod tests {
         }
 
         assert_eq!(tokens.len(), 44); // Adjust the expected number of tokens based on the input
-        dbg!("{:?}", tokens);
+        for token in tokens {
+            println!("{:?}", token);
+        }
     }
 }
