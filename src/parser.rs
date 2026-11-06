@@ -41,7 +41,9 @@ impl Parser {
         grammar.add_ast_transformer("cond_arm", Self::transform_cond_arm);
         grammar.add_ast_transformer("default_arm", Self::transform_default_arm);
         grammar.add_ast_transformer("lambda_expression", Self::transform_lambda_expression);
-        grammar.add_ast_transformer("atomic", Self::transform_atomic);
+        grammar.add_ast_transformer("atomic", Self::single_child);
+        grammar.add_ast_transformer("path_expression", Self::transform_path_expression);
+        grammar.add_ast_transformer("path_segment", Self::transform_path_segment);
         grammar.add_ast_transformer("arguments", Self::transform_arguments);
     }
 
@@ -59,6 +61,9 @@ impl Parser {
         let mut ret = Ast::new("item_list");
         for child in ast.children_by_id("it", true) {
             ret.add_child(child);
+        }
+        if let Some(_) = ast.child_by_id("final_semicolon", true) {
+            ret.add_child(Ast::with_value("NIL", "nil"));
         }
         ret
     }
@@ -288,26 +293,39 @@ impl Parser {
         ret
     }
 
-    fn transform_atomic(ast: Ast) -> Ast {
-        let children = ast.children();
-        if children.len() == 1 {
-            return children[0].clone();
-        } else {
-            // This is a function call: IDENTIFIER arguments*
-            let callee = children[0].clone();
-            let args_list = ast.children_by_id("args", true);
-            let mut ret = Ast::new("call");
-            ret.add_child(callee);
-            ret.add_child(args_list[0].clone());
-
-            for args in &args_list[1..] {
-                let mut new_call = Ast::new("call");
-                new_call.add_child(ret.clone());
-                new_call.add_child(args.clone());
-                ret = new_call;
-            }
-            return ret;
+    fn transform_path_expression(ast: Ast) -> Ast {
+        let segments = ast.children_by_id("segment", true);
+        if segments.len() == 1 {
+            return segments[0].clone();
         }
+        let mut ret = Ast::new("path_expression");
+        for segment in segments {
+            ret.add_child(segment);
+        }
+        ret
+    }
+
+    fn transform_path_segment(ast: Ast) -> Ast {
+        let identifier = ast.child_by_id("id", true)
+            .expect("Missing id in path_segment");
+        let args_list = ast.children_by_id("args", true);
+
+        if args_list.is_empty() {
+            return identifier;
+        }
+
+        let mut ret = Ast::new("call");
+        ret.add_child(identifier);
+        ret.add_child(args_list[0].clone());
+
+        for args in args_list.iter().skip(1) {
+            let mut new_call = Ast::new("call");
+            new_call.add_child(ret);
+            new_call.add_child(args.clone());
+            ret = new_call;
+        }
+
+        ret
     }
 
     fn transform_arguments(ast: Ast) -> Ast {
@@ -357,17 +375,14 @@ mod tests {
         begin
           x, y
 
-          fun init(xx, yy)
+          fun init(x, y)
             begin
-              x <- xx;
-              y <- yy
+              ego.x <- x;
+              ego.y <- y;
             end
 
           fun move(dx, dy)
-            begin
-              x <- x + dx;
-              y <- y + dy
-            end
+            Point(x + dx, y + dy)
 
         end
         "#;
@@ -445,6 +460,14 @@ mod tests {
         fun make_greeter(before, after)
             lambda (name) (before + name + after);
         make_greeter("Hello, ", "!")("World") -> greeting
+        "#;
+        parse_and_print_ast(code);
+    }
+
+    #[test]
+    fn test_parse_path_expression() {
+        let code = r#"
+        my_struct.my_method(42).another_method("hello") -> result
         "#;
         parse_and_print_ast(code);
     }

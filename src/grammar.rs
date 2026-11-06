@@ -19,6 +19,9 @@ pub fn create_grammar() -> Grammar {
           g.rule_ref_id("item", "it"),
         ])
       ),
+      opt(
+        tok_id("SEMICOLON", "final_semicolon")
+      ),
     ])
   });
   
@@ -116,7 +119,7 @@ pub fn create_grammar() -> Grammar {
   grammar.add_rule("assignment", false, |g| {
     choice(vec![
       seq(vec![
-        tok_id("IDENTIFIER", "target"),
+        g.rule_ref_id("path_expression", "target"),
         tok("LEFT_ARROW"),
         g.rule_ref_id("comparison", "source"),
       ]),
@@ -125,7 +128,7 @@ pub fn create_grammar() -> Grammar {
         opt(
           seq(vec![
             tok("RIGHT_ARROW"),
-            tok_id("IDENTIFIER", "target"),
+            g.rule_ref_id("path_expression", "target"),
           ])
         ),
       ]),
@@ -265,12 +268,28 @@ pub fn create_grammar() -> Grammar {
       tok("BOOL"),
       tok("STRING"),
       tok("NIL"),
-      seq(vec![
-        tok("IDENTIFIER"),
-        many(
-          g.rule_ref_id("arguments", "args")
-        ),
-      ]),
+      g.rule_ref("path_expression"),
+    ])
+  });
+  
+  grammar.add_rule("path_expression", false, |g| {
+    seq(vec![
+      g.rule_ref_id("path_segment", "segment"),
+      many(
+        seq(vec![
+          tok("DOT"),
+          g.rule_ref_id("path_segment", "segment"),
+        ])
+      ),
+    ])
+  });
+  
+  grammar.add_rule("path_segment", false, |g| {
+    seq(vec![
+      tok_id("IDENTIFIER", "id"),
+      many(
+        g.rule_ref_id("arguments", "args")
+      ),
     ])
   });
   

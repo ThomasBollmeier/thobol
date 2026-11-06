@@ -1,7 +1,7 @@
 @start
 program -> item_list;
 
-item_list -> it#item (SEMICOLON it#item)*;
+item_list -> it#item (SEMICOLON it#item)* final_semicolon#SEMICOLON?;
 
 item -> definition | expression;
 
@@ -22,8 +22,8 @@ expression -> block_expression | assignment;
 
 block_expression -> BEGIN item_list END;
 
-assignment -> target#IDENTIFIER LEFT_ARROW source#comparison |
-    source#comparison (RIGHT_ARROW target#IDENTIFIER)?;
+assignment -> target#path_expression LEFT_ARROW source#comparison |
+    source#comparison (RIGHT_ARROW target#path_expression)?;
 
 comparison ->
     left#sum
@@ -49,7 +49,10 @@ default_arm -> ELSE result#expression;
 
 lambda_expression -> LAMBDA parameters expression;
 
-atomic -> INTEGER | REAL | BOOL | STRING | NIL |
-    IDENTIFIER args#arguments*;
+atomic -> INTEGER | REAL | BOOL | STRING | NIL | path_expression;
+
+path_expression -> segment#path_segment (DOT segment#path_segment)*;
+
+path_segment -> id#IDENTIFIER args#arguments*;
 
 arguments -> LEFT_PAREN (argument#comparison (COMMA? argument#comparison)*)? RIGHT_PAREN;

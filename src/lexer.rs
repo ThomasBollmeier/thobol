@@ -215,6 +215,7 @@ impl TokenStream for Lexer {
                 ']' => return Some(Token::new(TokenType::RightSquareBracket, ch, line, column)),
                 ',' => return Some(Token::new(TokenType::Comma, ch, line, column)),
                 ';' => return Some(Token::new(TokenType::Semicolon, ch, line, column)),
+                '.' => return Some(Token::new(TokenType::Dot, ch, line, column)),
                 '<' => return Some(self.scan_less_or_others(line, column)),
                 '>' => return Some(self.scan_greater_or_others(line, column)),
                 '=' => return Some(self.scan_equal_or_others(line, column)),
