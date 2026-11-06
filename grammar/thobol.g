@@ -1,13 +1,18 @@
 @start
 program -> (definition | expression)*;
 
-definition -> var_definition | fun_definition;
+definition -> var_definition | fun_definition | struct_definition;
 
 var_definition -> DEF IDENTIFIER expression;
 
 fun_definition -> FUN IDENTIFIER parameters expression;
 
 parameters -> LEFT_SQUARE_BRACKET (param#IDENTIFIER (COMMA? param#IDENTIFIER)*)? RIGHT_SQUARE_BRACKET;
+
+struct_definition -> STRUCT name#IDENTIFIER BEGIN
+    (field#IDENTIFIER | method#fun_definition)
+    (COMMA? (field#IDENTIFIER | method#fun_definition))*
+    END;
 
 expression -> block_expression | assignment;
 

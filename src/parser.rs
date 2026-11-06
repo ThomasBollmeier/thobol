@@ -23,6 +23,7 @@ impl Parser {
         grammar.add_ast_transformer("definition", Self::single_child);
         grammar.add_ast_transformer("var_definition", Self::transform_var_definition);
         grammar.add_ast_transformer("fun_definition", Self::transform_fun_definition);
+        grammar.add_ast_transformer("struct_definition", Self::transform_struct_definition);
         grammar.add_ast_transformer("parameters", Self::transform_parameters);
         grammar.add_ast_transformer("expression", Self::single_child);
         grammar.add_ast_transformer("block_expression", Self::transform_block_expression);
@@ -69,6 +70,29 @@ impl Parser {
         lambda_expression.add_child(parameters);
         lambda_expression.add_child(body);
         ret.add_child(lambda_expression);
+
+        ret
+    }
+
+    fn transform_struct_definition(ast: Ast) -> Ast {
+        let name = ast.child_by_id("name", true)
+            .expect("Missing name in struct_definition")
+            .value
+            .expect("Missing value in name of struct_definition");
+        let mut ret = Ast::new("struct_definition");
+        ret.add_child(Ast::with_value("name", name));
+
+        let mut fields = Ast::new("fields");
+        for field in ast.children_by_id("field", true) {
+            fields.add_child(field);
+        }
+        ret.add_child(fields);
+
+        let mut methods = Ast::new("methods");
+        for method in ast.children_by_id("method", true) {
+            methods.add_child(method);
+        }
+        ret.add_child(methods);
 
         ret
     }
@@ -293,11 +317,27 @@ mod tests {
         begin
             fun helper[a b i]
                 if i < n
-                    helper[b, a+b, i+1]
+                    helper[b a+b i+1]
                 else
                     a
                 end
-            helper[1, 1, 0]
+            helper[1 1 0]
+        end
+        "#;
+        parse_and_print_ast(code);
+    }
+
+    #[test]
+    fn test_parse_struct_definition() {
+        let code = r#"
+        struct Point
+        begin
+          x, y
+          fun move[dx dy]
+            begin
+              x <- x + dx
+              y <- y + dy
+            end
         end
         "#;
         parse_and_print_ast(code);
@@ -371,10 +411,8 @@ mod tests {
     #[test]
     fn test_parse_calls_of_calls() {
         let code = r#"
-        fun make_greeter[before, after] begin
-            fun greeter[name] (before + name + after)
-            greeter
-        end
+        fun make_greeter[before, after]
+            lambda [name] (before + name + after)
 
         make_greeter["Hello, ", "!"]["World"] -> greeting
         "#;

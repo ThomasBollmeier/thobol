@@ -19,6 +19,7 @@ pub fn create_grammar() -> Grammar {
     choice(vec![
       g.rule_ref("var_definition"),
       g.rule_ref("fun_definition"),
+      g.rule_ref("struct_definition"),
     ])
   });
   
@@ -56,6 +57,30 @@ pub fn create_grammar() -> Grammar {
         ])
       ),
       tok("RIGHT_SQUARE_BRACKET"),
+    ])
+  });
+  
+  grammar.add_rule("struct_definition", false, |g| {
+    seq(vec![
+      tok("STRUCT"),
+      tok_id("IDENTIFIER", "name"),
+      tok("BEGIN"),
+      choice(vec![
+        tok_id("IDENTIFIER", "field"),
+        g.rule_ref_id("fun_definition", "method"),
+      ]),
+      many(
+        seq(vec![
+          opt(
+            tok("COMMA")
+          ),
+          choice(vec![
+            tok_id("IDENTIFIER", "field"),
+            g.rule_ref_id("fun_definition", "method"),
+          ]),
+        ])
+      ),
+      tok("END"),
     ])
   });
   
