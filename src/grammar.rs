@@ -7,12 +7,26 @@ pub fn create_grammar() -> Grammar {
   let mut grammar = Grammar::new();
   
   grammar.add_rule("program", true, |g| {
-    many(
-      choice(vec![
-        g.rule_ref("definition"),
-        g.rule_ref("expression"),
-      ])
-    )
+    g.rule_ref("item_list")
+  });
+  
+  grammar.add_rule("item_list", false, |g| {
+    seq(vec![
+      g.rule_ref_id("item", "it"),
+      many(
+        seq(vec![
+          tok("SEMICOLON"),
+          g.rule_ref_id("item", "it"),
+        ])
+      ),
+    ])
+  });
+  
+  grammar.add_rule("item", false, |g| {
+    choice(vec![
+      g.rule_ref("definition"),
+      g.rule_ref("expression"),
+    ])
   });
   
   grammar.add_rule("definition", false, |g| {
@@ -42,7 +56,7 @@ pub fn create_grammar() -> Grammar {
   
   grammar.add_rule("parameters", false, |g| {
     seq(vec![
-      tok("LEFT_SQUARE_BRACKET"),
+      tok("LEFT_PAREN"),
       opt(
         seq(vec![
           tok_id("IDENTIFIER", "param"),
@@ -56,7 +70,7 @@ pub fn create_grammar() -> Grammar {
           ),
         ])
       ),
-      tok("RIGHT_SQUARE_BRACKET"),
+      tok("RIGHT_PAREN"),
     ])
   });
   
@@ -94,12 +108,7 @@ pub fn create_grammar() -> Grammar {
   grammar.add_rule("block_expression", false, |g| {
     seq(vec![
       tok("BEGIN"),
-      many(
-        g.rule_ref_id("definition", "item")
-      ),
-      one_or_more(
-        g.rule_ref_id("expression", "item")
-      ),
+      g.rule_ref("item_list"),
       tok("END"),
     ])
   });
@@ -267,7 +276,7 @@ pub fn create_grammar() -> Grammar {
   
   grammar.add_rule("arguments", false, |g| {
     seq(vec![
-      tok("LEFT_SQUARE_BRACKET"),
+      tok("LEFT_PAREN"),
       opt(
         seq(vec![
           g.rule_ref_id("comparison", "argument"),
@@ -281,7 +290,7 @@ pub fn create_grammar() -> Grammar {
           ),
         ])
       ),
-      tok("RIGHT_SQUARE_BRACKET"),
+      tok("RIGHT_PAREN"),
     ])
   });
   

@@ -15,6 +15,7 @@ pub enum TokenType {
     LeftSquareBracket,
     RightSquareBracket,
     Comma,
+    Semicolon,
     Identifier,
     Begin,
     End,

@@ -1,5 +1,9 @@
 @start
-program -> (definition | expression)*;
+program -> item_list;
+
+item_list -> it#item (SEMICOLON it#item)*;
+
+item -> definition | expression;
 
 definition -> var_definition | fun_definition | struct_definition;
 
@@ -7,7 +11,7 @@ var_definition -> DEF IDENTIFIER expression;
 
 fun_definition -> FUN IDENTIFIER parameters expression;
 
-parameters -> LEFT_SQUARE_BRACKET (param#IDENTIFIER (COMMA? param#IDENTIFIER)*)? RIGHT_SQUARE_BRACKET;
+parameters -> LEFT_PAREN (param#IDENTIFIER (COMMA? param#IDENTIFIER)*)? RIGHT_PAREN;
 
 struct_definition -> STRUCT name#IDENTIFIER BEGIN
     (field#IDENTIFIER | method#fun_definition)
@@ -16,7 +20,7 @@ struct_definition -> STRUCT name#IDENTIFIER BEGIN
 
 expression -> block_expression | assignment;
 
-block_expression -> BEGIN item#definition* item#expression+ END;
+block_expression -> BEGIN item_list END;
 
 assignment -> target#IDENTIFIER LEFT_ARROW source#comparison |
     source#comparison (RIGHT_ARROW target#IDENTIFIER)?;
@@ -48,4 +52,4 @@ lambda_expression -> LAMBDA parameters expression;
 atomic -> INTEGER | REAL | BOOL | STRING | NIL |
     IDENTIFIER args#arguments*;
 
-arguments -> LEFT_SQUARE_BRACKET (argument#comparison (COMMA? argument#comparison)*)? RIGHT_SQUARE_BRACKET;
+arguments -> LEFT_PAREN (argument#comparison (COMMA? argument#comparison)*)? RIGHT_PAREN;

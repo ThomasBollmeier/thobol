@@ -20,6 +20,9 @@ impl Parser {
     }
 
     fn add_ast_transformers(grammar: &mut Grammar) {
+        grammar.add_ast_transformer("program", Self::transform_program);
+        grammar.add_ast_transformer("item_list", Self::transform_item_list);
+        grammar.add_ast_transformer("item", Self::single_child);
         grammar.add_ast_transformer("definition", Self::single_child);
         grammar.add_ast_transformer("var_definition", Self::transform_var_definition);
         grammar.add_ast_transformer("fun_definition", Self::transform_fun_definition);
@@ -40,6 +43,24 @@ impl Parser {
         grammar.add_ast_transformer("lambda_expression", Self::transform_lambda_expression);
         grammar.add_ast_transformer("atomic", Self::transform_atomic);
         grammar.add_ast_transformer("arguments", Self::transform_arguments);
+    }
+
+    fn transform_program(ast: Ast) -> Ast {
+        let mut ret = Ast::new("program");
+        let children = ast.children();
+        let item_list = &children[0];
+        for child in item_list.children() {
+            ret.add_child(child.clone());
+        }
+        ret
+    }
+
+    fn transform_item_list(ast: Ast) -> Ast {
+        let mut ret = Ast::new("item_list");
+        for child in ast.children_by_id("it", true) {
+            ret.add_child(child);
+        }
+        ret
     }
 
     fn transform_var_definition(ast: Ast) -> Ast {
@@ -110,7 +131,9 @@ impl Parser {
 
     fn transform_block_expression(ast: Ast) -> Ast {
         let mut ret = Ast::new("block_expression");
-        for child in ast.children_by_id("item", true) {
+        let item_list = ast.children().get(1)
+            .expect("Missing item_list in block_expression");
+        for child in item_list.children() {
             ret.add_child(child.clone());
         }
         ret
@@ -313,15 +336,15 @@ mod tests {
     #[test]
     fn test_parse_function_definition() {
         let code = r#"
-        fun fibonacci[n] 
+        fun fibonacci()
         begin
-            fun helper[a b i]
+            fun helper(a, b, i)
                 if i < n
-                    helper[b a+b i+1]
+                    helper(b, a+b, i+1)
                 else
                     a
-                end
-            helper[1 1 0]
+                end;
+            helper(1, 1, 0)
         end
         "#;
         parse_and_print_ast(code);
@@ -333,11 +356,19 @@ mod tests {
         struct Point
         begin
           x, y
-          fun move[dx dy]
+
+          fun init(xx, yy)
             begin
-              x <- x + dx
+              x <- xx;
+              y <- yy
+            end
+
+          fun move(dx, dy)
+            begin
+              x <- x + dx;
               y <- y + dy
             end
+
         end
         "#;
         parse_and_print_ast(code);
@@ -403,7 +434,7 @@ mod tests {
     #[test]
     fn test_parse_lambda_expression() {
         let code = r#"
-        map[λ[x] (x * x) xs] -> squares
+        map(λ(x) (x * x) xs) -> squares
         "#;
         parse_and_print_ast(code);
     }
@@ -411,10 +442,9 @@ mod tests {
     #[test]
     fn test_parse_calls_of_calls() {
         let code = r#"
-        fun make_greeter[before, after]
-            lambda [name] (before + name + after)
-
-        make_greeter["Hello, ", "!"]["World"] -> greeting
+        fun make_greeter(before, after)
+            lambda (name) (before + name + after);
+        make_greeter("Hello, ", "!")("World") -> greeting
         "#;
         parse_and_print_ast(code);
     }

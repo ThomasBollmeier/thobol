@@ -200,7 +200,7 @@ impl TokenStream for Lexer {
             self.advance_position();
 
             match ch {
-                ';' => {
+                '#' => {
                     self.scan_line_comment();
                     continue;
                 }
@@ -214,6 +214,7 @@ impl TokenStream for Lexer {
                 '[' => return Some(Token::new(TokenType::LeftSquareBracket, ch, line, column)),
                 ']' => return Some(Token::new(TokenType::RightSquareBracket, ch, line, column)),
                 ',' => return Some(Token::new(TokenType::Comma, ch, line, column)),
+                ';' => return Some(Token::new(TokenType::Semicolon, ch, line, column)),
                 '<' => return Some(self.scan_less_or_others(line, column)),
                 '>' => return Some(self.scan_greater_or_others(line, column)),
                 '=' => return Some(self.scan_equal_or_others(line, column)),
@@ -239,7 +240,7 @@ mod tests {
     #[test]
     fn test_lexer() {
         let input = r#"
-        ; This is a line comment
+        # This is a line comment
         def factorial(n)
             begin
                 def helper(i acc)
