@@ -354,7 +354,7 @@ mod tests {
     #[test]
     fn test_parse_function_definition() {
         let code = r#"
-        fun fibonacci()
+        fun fibonacci(n)
         begin
             fun helper(a, b, i)
                 if i < n
