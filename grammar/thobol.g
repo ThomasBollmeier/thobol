@@ -11,7 +11,12 @@ var_definition -> DEF IDENTIFIER expression;
 
 fun_definition -> FUN IDENTIFIER parameters expression;
 
-parameters -> LEFT_PAREN (param#IDENTIFIER (COMMA? param#IDENTIFIER)*)? RIGHT_PAREN;
+parameters -> LEFT_PAREN
+    (param#IDENTIFIER (COMMA? param#IDENTIFIER)* (COMMA? var_param#var_param)? |
+     var_param#var_param?)
+    RIGHT_PAREN;
+
+var_param -> IDENTIFIER DOT3;
 
 struct_definition -> STRUCT name#IDENTIFIER BEGIN
     (field#IDENTIFIER | method#fun_definition)
@@ -55,4 +60,7 @@ path_expression -> segment#path_segment (DOT segment#path_segment)*;
 
 path_segment -> id#IDENTIFIER args#arguments*;
 
-arguments -> LEFT_PAREN (argument#comparison (COMMA? argument#comparison)*)? RIGHT_PAREN;
+arguments -> LEFT_PAREN
+    (argument#comparison (COMMA? argument#comparison)* (COMMA? DOT3 vararg#comparison)? |
+     (DOT3 vararg#comparison)?)
+    RIGHT_PAREN;

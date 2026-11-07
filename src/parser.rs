@@ -28,6 +28,7 @@ impl Parser {
         grammar.add_ast_transformer("fun_definition", Self::transform_fun_definition);
         grammar.add_ast_transformer("struct_definition", Self::transform_struct_definition);
         grammar.add_ast_transformer("parameters", Self::transform_parameters);
+        grammar.add_ast_transformer("var_param", Self::transform_var_param);
         grammar.add_ast_transformer("expression", Self::single_child);
         grammar.add_ast_transformer("block_expression", Self::transform_block_expression);
         grammar.add_ast_transformer("assignment", Self::transform_assignment);
@@ -131,7 +132,20 @@ impl Parser {
                 .expect("Missing value in param of parameters");
             ret.add_child(Ast::with_value("parameter", param_name));
         }
+
+        if let Some(var_param) = ast.child_by_id("var_param", true) {
+            ret.add_child(var_param);
+        }
+
         ret
+    }
+
+    fn transform_var_param(ast: Ast) -> Ast {
+        let children = ast.children();
+        let param_name = children[0].clone()
+            .value
+            .expect("Missing value in var_param");
+        Ast::with_value("var_parameter", param_name)
     }
 
     fn transform_block_expression(ast: Ast) -> Ast {
@@ -333,6 +347,11 @@ impl Parser {
         for child in ast.children_by_id("argument", true) {
             ret.add_child(child.clone());
         }
+        if let Some(vararg) = ast.child_by_id("vararg", true) {
+            let mut spread_node = Ast::new("spread");
+            spread_node.add_child(vararg);
+            ret.add_child(spread_node);
+        }
         ret
     }
 
@@ -364,6 +383,20 @@ mod tests {
                 end;
             helper(1, 1, 0)
         end
+        "#;
+        parse_and_print_ast(code);
+    }
+
+    #[test]
+    fn test_fun_def_with_var_param() {
+        let code = r#"
+        fun sum_all(a, b, rest...)
+            begin
+                def total a + b;
+                total <- total + rest.sum();
+                total
+            end;
+        sum_all(1 2 3,14 4 5) -> result
         "#;
         parse_and_print_ast(code);
     }
@@ -468,6 +501,16 @@ mod tests {
     fn test_parse_path_expression() {
         let code = r#"
         my_struct.my_method(42).another_method("hello") -> result
+        "#;
+        parse_and_print_ast(code);
+    }
+
+    #[test]
+    fn test_parse_spread_arguments() {
+        let code = r#"
+        fun sum(a, b) a + b;
+        def numbers Array(1, 2);
+        sum(...numbers) -> result
         "#;
         parse_and_print_ast(code);
     }

@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum TokenType {
     Integer,
     Real,
@@ -17,6 +17,7 @@ pub enum TokenType {
     Comma,
     Semicolon,
     Dot,
+    Dot3,
     Identifier,
     Begin,
     End,
@@ -39,6 +40,7 @@ pub enum TokenType {
     And,
     Or,
     Not,
+    Error,
 }
 
 impl TokenType {

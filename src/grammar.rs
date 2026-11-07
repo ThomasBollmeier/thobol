@@ -60,7 +60,7 @@ pub fn create_grammar() -> Grammar {
   grammar.add_rule("parameters", false, |g| {
     seq(vec![
       tok("LEFT_PAREN"),
-      opt(
+      choice(vec![
         seq(vec![
           tok_id("IDENTIFIER", "param"),
           many(
@@ -71,9 +71,27 @@ pub fn create_grammar() -> Grammar {
               tok_id("IDENTIFIER", "param"),
             ])
           ),
-        ])
-      ),
+          opt(
+            seq(vec![
+              opt(
+                tok("COMMA")
+              ),
+              g.rule_ref_id("var_param", "var_param"),
+            ])
+          ),
+        ]),
+        opt(
+          g.rule_ref_id("var_param", "var_param")
+        ),
+      ]),
       tok("RIGHT_PAREN"),
+    ])
+  });
+  
+  grammar.add_rule("var_param", false, |g| {
+    seq(vec![
+      tok("IDENTIFIER"),
+      tok("DOT3"),
     ])
   });
   
@@ -296,7 +314,7 @@ pub fn create_grammar() -> Grammar {
   grammar.add_rule("arguments", false, |g| {
     seq(vec![
       tok("LEFT_PAREN"),
-      opt(
+      choice(vec![
         seq(vec![
           g.rule_ref_id("comparison", "argument"),
           many(
@@ -307,8 +325,23 @@ pub fn create_grammar() -> Grammar {
               g.rule_ref_id("comparison", "argument"),
             ])
           ),
-        ])
-      ),
+          opt(
+            seq(vec![
+              opt(
+                tok("COMMA")
+              ),
+              tok("DOT3"),
+              g.rule_ref_id("comparison", "vararg"),
+            ])
+          ),
+        ]),
+        opt(
+          seq(vec![
+            tok("DOT3"),
+            g.rule_ref_id("comparison", "vararg"),
+          ])
+        ),
+      ]),
       tok("RIGHT_PAREN"),
     ])
   });

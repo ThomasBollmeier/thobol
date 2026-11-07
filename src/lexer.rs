@@ -1,6 +1,6 @@
+use crate::token_types::TokenType;
 use alteraparser::prelude::Token;
 use alteraparser::token::TokenStream;
-use crate::token_types::TokenType;
 
 pub struct Lexer {
     input: Vec<char>,
@@ -11,7 +11,12 @@ pub struct Lexer {
 
 impl Lexer {
     pub fn new(input: String) -> Self {
-        Self { input: input.chars().collect(), position: 0, line: 1, column: 1 }
+        Self {
+            input: input.chars().collect(),
+            position: 0,
+            line: 1,
+            column: 1,
+        }
     }
 
     fn scan_whitespace(&mut self) {
@@ -68,10 +73,8 @@ impl Lexer {
                     lexeme.push(next_char);
                     Token::new(TokenType::NotEqual, lexeme, line, column)
                 }
-                _ => {
-                    Token::new(TokenType::LessThan, lexeme, line, column)
-                }
-            }
+                _ => Token::new(TokenType::LessThan, lexeme, line, column),
+            };
         }
         Token::new(TokenType::LessThan, lexeme, line, column)
     }
@@ -86,10 +89,8 @@ impl Lexer {
                     lexeme.push(next_char);
                     Token::new(TokenType::GreaterThanOrEqual, lexeme, line, column)
                 }
-                _ => {
-                    Token::new(TokenType::GreaterThan, lexeme, line, column)
-                }
-            }
+                _ => Token::new(TokenType::GreaterThan, lexeme, line, column),
+            };
         }
         Token::new(TokenType::GreaterThan, lexeme, line, column)
     }
@@ -102,7 +103,10 @@ impl Lexer {
             if current_char.is_digit(10) {
                 lexeme.push(current_char);
                 self.advance_position();
-            } else if current_char == ',' && !has_comma {
+            } else if current_char == ','
+                && !has_comma
+                && self.peek_next_nth(1).map_or(false, |c| c.is_digit(10))
+            {
                 has_comma = true;
                 lexeme.push(current_char);
                 self.advance_position();
@@ -130,10 +134,8 @@ impl Lexer {
                     lexeme.push(next_char);
                     Token::new(TokenType::RightFatArrow, lexeme, line, column)
                 }
-                _ => {
-                    Token::new(TokenType::Equal, lexeme, line, column)
-                }
-            }
+                _ => Token::new(TokenType::Equal, lexeme, line, column),
+            };
         }
         Token::new(TokenType::Equal, lexeme, line, column)
     }
@@ -152,7 +154,12 @@ impl Lexer {
         Token::new(TokenType::String, lexeme, line, column)
     }
 
-    fn scan_identifier_or_keyword(&mut self, first_char: char, line: usize, column: usize) -> Token {
+    fn scan_identifier_or_keyword(
+        &mut self,
+        first_char: char,
+        line: usize,
+        column: usize,
+    ) -> Token {
         let mut lexeme = String::from(first_char);
 
         while let Some(current_char) = self.current_char() {
@@ -166,6 +173,32 @@ impl Lexer {
 
         let token_type = TokenType::get_keyword_type(&lexeme).unwrap_or(TokenType::Identifier);
         Token::new(token_type, lexeme, line, column)
+    }
+
+    fn scan_dot_or_dot3(&mut self, line: usize, column: usize) -> Token {
+        let mut lexeme = String::from(".");
+
+        loop {
+            if lexeme.len() == 3 {
+                break;
+            }
+            if let Some(next_char) = self.current_char() {
+                if next_char == '.' {
+                    self.advance_position();
+                    lexeme.push(next_char);
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        match lexeme.len() {
+            1 => Token::new(TokenType::Dot, lexeme, line, column),
+            3 => Token::new(TokenType::Dot3, lexeme, line, column),
+            _ => Token::new(TokenType::Error, lexeme, line, column), // Handle unexpected cases
+        }
     }
 
     fn advance_position(&mut self) {
@@ -182,6 +215,10 @@ impl Lexer {
 
     fn current_char(&self) -> Option<char> {
         self.input.get(self.position).copied()
+    }
+
+    fn peek_next_nth(&self, n: usize) -> Option<char> {
+        self.input.get(self.position + n).copied()
     }
 }
 
@@ -215,12 +252,12 @@ impl TokenStream for Lexer {
                 ']' => return Some(Token::new(TokenType::RightSquareBracket, ch, line, column)),
                 ',' => return Some(Token::new(TokenType::Comma, ch, line, column)),
                 ';' => return Some(Token::new(TokenType::Semicolon, ch, line, column)),
-                '.' => return Some(Token::new(TokenType::Dot, ch, line, column)),
+                '.' => return Some(self.scan_dot_or_dot3(line, column)),
                 '<' => return Some(self.scan_less_or_others(line, column)),
                 '>' => return Some(self.scan_greater_or_others(line, column)),
                 '=' => return Some(self.scan_equal_or_others(line, column)),
                 '"' => return Some(self.scan_string(line, column)),
-                _ => {},
+                _ => {}
             }
 
             if ch.is_digit(10) {
@@ -237,6 +274,18 @@ impl TokenStream for Lexer {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
+
+    #[allow(unused)]
+    fn tokenize(input: &str) -> Vec<Token> {
+        let mut lexer = Lexer::new(input.to_string());
+        let mut tokens = Vec::new();
+
+        while let Some(token) = lexer.advance() {
+            tokens.push(token);
+        }
+
+        tokens
+    }
 
     #[test]
     fn test_lexer() {
@@ -257,16 +306,32 @@ mod tests {
             end
         "#;
 
-        let mut lexer = Lexer::new(input.to_string());
-        let mut tokens = Vec::new();
-
-        while let Some(token) = lexer.advance() {
-            tokens.push(token);
-        }
+        let tokens = tokenize(input);
 
         assert_eq!(tokens.len(), 44); // Adjust the expected number of tokens based on the input
         for token in tokens {
             println!("{:?}", token);
         }
+    }
+
+    #[test]
+    fn test_lexer_with_dot3() {
+        let input = "numbers...";
+        let tokens = tokenize(input);
+
+        assert_eq!(tokens.len(), 2); // Adjust the expected number of tokens based on the input
+        for token in tokens {
+            println!("{:?}", token);
+        }
+    }
+
+    #[test]
+    fn test_lexer_with_dot_error() {
+        let input = "numbers..";
+        let tokens = tokenize(input);
+
+        assert_eq!(tokens.len(), 2); // Adjust the expected number of tokens based on the input
+        let expected_token_type: String = TokenType::Error.into();
+        assert_eq!(tokens[1].token_type, expected_token_type); // The second token should be an error token for the invalid ".."
     }
 }
