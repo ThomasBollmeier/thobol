@@ -1,4 +1,4 @@
-pub mod token_types;
-pub mod lexer;
 pub mod grammar;
-mod parser;
+pub mod lexer;
+pub mod parser;
+pub mod token_types;

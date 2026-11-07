@@ -1,0 +1,12 @@
+fun fibonacci(n)
+  begin
+    fun helper(a, b, idx)
+      if idx = n
+        a
+      else
+        helper(b, a + b, idx + 1)
+      end;
+    helper(1, 1, 0)
+  end;
+
+writeln(fibonacci(10))

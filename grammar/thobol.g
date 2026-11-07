@@ -12,7 +12,7 @@ var_definition -> DEF IDENTIFIER expression;
 fun_definition -> FUN IDENTIFIER parameters expression;
 
 parameters -> LEFT_PAREN
-    (param#IDENTIFIER (COMMA? param#IDENTIFIER)* (COMMA? var_param#var_param)? |
+    (param#IDENTIFIER (COMMA param#IDENTIFIER)* (COMMA var_param#var_param)? |
      var_param#var_param?)
     RIGHT_PAREN;
 
@@ -61,6 +61,6 @@ path_expression -> segment#path_segment (DOT segment#path_segment)*;
 path_segment -> id#IDENTIFIER args#arguments*;
 
 arguments -> LEFT_PAREN
-    (argument#comparison (COMMA? argument#comparison)* (COMMA? DOT3 vararg#comparison)? |
+    (argument#comparison (COMMA argument#comparison)* (COMMA DOT3 vararg#comparison)? |
      (DOT3 vararg#comparison)?)
     RIGHT_PAREN;

@@ -71,7 +71,8 @@ impl Parser {
 
     fn transform_var_definition(ast: Ast) -> Ast {
         let children = ast.children();
-        let name = children[1].clone()
+        let name = children[1]
+            .clone()
             .value
             .expect("Missing value in name of var_definition");
         let value = children[2].clone();
@@ -85,7 +86,8 @@ impl Parser {
 
     fn transform_fun_definition(ast: Ast) -> Ast {
         let children = ast.children();
-        let name = children[1].clone()
+        let name = children[1]
+            .clone()
             .value
             .expect("Missing value in name of fun_definition");
         let parameters = children[2].clone();
@@ -102,7 +104,8 @@ impl Parser {
     }
 
     fn transform_struct_definition(ast: Ast) -> Ast {
-        let name = ast.child_by_id("name", true)
+        let name = ast
+            .child_by_id("name", true)
             .expect("Missing name in struct_definition")
             .value
             .expect("Missing value in name of struct_definition");
@@ -127,9 +130,7 @@ impl Parser {
     fn transform_parameters(ast: Ast) -> Ast {
         let mut ret = Ast::new("parameters");
         for child in ast.children_by_id("param", true) {
-            let param_name = child
-                .value
-                .expect("Missing value in param of parameters");
+            let param_name = child.value.expect("Missing value in param of parameters");
             ret.add_child(Ast::with_value("parameter", param_name));
         }
 
@@ -142,7 +143,8 @@ impl Parser {
 
     fn transform_var_param(ast: Ast) -> Ast {
         let children = ast.children();
-        let param_name = children[0].clone()
+        let param_name = children[0]
+            .clone()
             .value
             .expect("Missing value in var_param");
         Ast::with_value("var_parameter", param_name)
@@ -150,7 +152,9 @@ impl Parser {
 
     fn transform_block_expression(ast: Ast) -> Ast {
         let mut ret = Ast::new("block_expression");
-        let item_list = ast.children().get(1)
+        let item_list = ast
+            .children()
+            .get(1)
             .expect("Missing item_list in block_expression");
         for child in item_list.children() {
             ret.add_child(child.clone());
@@ -238,7 +242,10 @@ impl Parser {
             // This is a parenthesized expression: ( assignment )
             return children[1].clone();
         }
-        panic!("Unexpected number of children in primary: {}", children.len());
+        panic!(
+            "Unexpected number of children in primary: {}",
+            children.len()
+        );
     }
 
     fn transform_if_expression(ast: Ast) -> Ast {
@@ -263,10 +270,10 @@ impl Parser {
         let mut ret = Ast::new("cond_expression");
         for child in ast.children() {
             match child.name.as_str() {
-                "COND" | "END" => { }
+                "COND" | "END" => {}
                 _ => {
                     ret.add_child(child.clone());
-                },
+                }
             }
         }
         ret
@@ -320,7 +327,8 @@ impl Parser {
     }
 
     fn transform_path_segment(ast: Ast) -> Ast {
-        let identifier = ast.child_by_id("id", true)
+        let identifier = ast
+            .child_by_id("id", true)
             .expect("Missing id in path_segment");
         let args_list = ast.children_by_id("args", true);
 
@@ -396,7 +404,7 @@ mod tests {
                 total <- total + rest.sum();
                 total
             end;
-        sum_all(1 2 3,14 4 5) -> result
+        sum_all(1, 2, 3.14, 4, 5) -> result
         "#;
         parse_and_print_ast(code);
     }
@@ -482,7 +490,7 @@ mod tests {
     #[test]
     fn test_parse_lambda_expression() {
         let code = r#"
-        map(λ(x) (x * x) xs) -> squares
+        map(λ(x) (x * x), xs) -> squares
         "#;
         parse_and_print_ast(code);
     }

@@ -97,17 +97,17 @@ impl Lexer {
 
     fn scan_number(&mut self, first_digit: char, line: usize, column: usize) -> Token {
         let mut lexeme = String::from(first_digit);
-        let mut has_comma = false;
+        let mut has_dot = false;
 
         while let Some(current_char) = self.current_char() {
             if current_char.is_digit(10) {
                 lexeme.push(current_char);
                 self.advance_position();
-            } else if current_char == ','
-                && !has_comma
+            } else if current_char == '.'
+                && !has_dot
                 && self.peek_next_nth(1).map_or(false, |c| c.is_digit(10))
             {
-                has_comma = true;
+                has_dot = true;
                 lexeme.push(current_char);
                 self.advance_position();
             } else {
@@ -115,7 +115,7 @@ impl Lexer {
             }
         }
 
-        let token_type = if has_comma {
+        let token_type = if has_dot {
             TokenType::Real
         } else {
             TokenType::Integer

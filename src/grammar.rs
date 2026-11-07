@@ -65,17 +65,13 @@ pub fn create_grammar() -> Grammar {
           tok_id("IDENTIFIER", "param"),
           many(
             seq(vec![
-              opt(
-                tok("COMMA")
-              ),
+              tok("COMMA"),
               tok_id("IDENTIFIER", "param"),
             ])
           ),
           opt(
             seq(vec![
-              opt(
-                tok("COMMA")
-              ),
+              tok("COMMA"),
               g.rule_ref_id("var_param", "var_param"),
             ])
           ),
@@ -319,17 +315,13 @@ pub fn create_grammar() -> Grammar {
           g.rule_ref_id("comparison", "argument"),
           many(
             seq(vec![
-              opt(
-                tok("COMMA")
-              ),
+              tok("COMMA"),
               g.rule_ref_id("comparison", "argument"),
             ])
           ),
           opt(
             seq(vec![
-              opt(
-                tok("COMMA")
-              ),
+              tok("COMMA"),
               tok("DOT3"),
               g.rule_ref_id("comparison", "vararg"),
             ])
