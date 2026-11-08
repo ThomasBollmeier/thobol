@@ -18,10 +18,10 @@ parameters -> LEFT_PAREN
 
 var_param -> IDENTIFIER DOT3;
 
-struct_definition -> STRUCT name#IDENTIFIER BEGIN
+struct_definition -> STRUCT name#IDENTIFIER
     (field#IDENTIFIER | method#fun_definition)
     (COMMA? (field#IDENTIFIER | method#fun_definition))*
-    END;
+    END_STRUCT;
 
 expression -> block_expression | assignment;
 
@@ -44,9 +44,9 @@ power -> base#primary (op#CARET exponent#power)?;
 primary -> LEFT_PAREN assignment RIGHT_PAREN | if_expression | cond_expression
     | lambda_expression | atomic;
 
-if_expression -> IF condition#expression then_branch#expression (ELSE else_branch#expression)? END;
+if_expression -> IF condition#expression then_branch#expression (ELSE else_branch#expression)? END_IF;
 
-cond_expression -> COND cond_arm* default_arm? END;
+cond_expression -> COND cond_arm* default_arm? END_COND;
 
 cond_arm -> condition#expression RIGHT_FAT_ARROW result#expression;
 

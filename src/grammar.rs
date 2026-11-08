@@ -95,7 +95,6 @@ pub fn create_grammar() -> Grammar {
     seq(vec![
       tok("STRUCT"),
       tok_id("IDENTIFIER", "name"),
-      tok("BEGIN"),
       choice(vec![
         tok_id("IDENTIFIER", "field"),
         g.rule_ref_id("fun_definition", "method"),
@@ -111,7 +110,7 @@ pub fn create_grammar() -> Grammar {
           ]),
         ])
       ),
-      tok("END"),
+      tok("END_STRUCT"),
     ])
   });
   
@@ -235,7 +234,7 @@ pub fn create_grammar() -> Grammar {
           g.rule_ref_id("expression", "else_branch"),
         ])
       ),
-      tok("END"),
+      tok("END_IF"),
     ])
   });
   
@@ -248,7 +247,7 @@ pub fn create_grammar() -> Grammar {
       opt(
         g.rule_ref("default_arm")
       ),
-      tok("END"),
+      tok("END_COND"),
     ])
   });
   

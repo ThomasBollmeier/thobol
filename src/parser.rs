@@ -388,7 +388,7 @@ mod tests {
                     helper(b, a+b, i+1)
                 else
                     a
-                end;
+                endif;
             helper(1, 1, 0)
         end
         "#;
@@ -413,7 +413,6 @@ mod tests {
     fn test_parse_struct_definition() {
         let code = r#"
         struct Point
-        begin
           x, y
 
           fun init(x, y)
@@ -425,7 +424,7 @@ mod tests {
           fun move(dx, dy)
             Point(x + dx, y + dy)
 
-        end
+        endstruct
         "#;
         parse_and_print_ast(code);
     }
@@ -445,7 +444,7 @@ mod tests {
     #[test]
     fn test_parse_if_expression() {
         let code = r#"
-        if true 1 else 0 end
+        if true 1 else 0 endif
         "#;
         parse_and_print_ast(code);
     }
@@ -456,10 +455,10 @@ mod tests {
         if true
             if false
                 1
-            end
+            endif
         else
             2
-        end
+        endif
         "#;
         parse_and_print_ast(code);
     }
@@ -470,7 +469,7 @@ mod tests {
         cond
             true => 1
             else 0
-        end
+        endcond
         "#;
         parse_and_print_ast(code);
     }
