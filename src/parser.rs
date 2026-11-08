@@ -91,7 +91,8 @@ impl Parser {
             .value
             .expect("Missing value in name of fun_definition");
         let parameters = children[2].clone();
-        let body = children[3].clone();
+        let mut body = ast.child_by_id("body", true).expect("Missing body in fun_definition");
+        body.name = "body".to_string();
 
         let mut ret = Ast::new("var_definition");
         ret.add_child(Ast::with_value("name", name));
@@ -252,15 +253,17 @@ impl Parser {
         let condition = ast
             .child_by_id("condition", true)
             .expect("Missing condition in if_expression");
-        let then_branch = ast
+        let mut then_branch = ast
             .child_by_id("then_branch", true)
             .expect("Missing then_branch in if_expression");
+        then_branch.name = "then_branch".to_string();
         let else_branch = ast.child_by_id("else_branch", true);
 
         let mut ret = Ast::new("if_expression");
         ret.add_child(condition);
         ret.add_child(then_branch);
-        if let Some(else_branch) = else_branch {
+        if let Some(mut else_branch) = else_branch {
+            else_branch.name = "else_branch".to_string();
             ret.add_child(else_branch);
         }
         ret
@@ -296,7 +299,10 @@ impl Parser {
     fn transform_lambda_expression(ast: Ast) -> Ast {
         let children = ast.children();
         let parameters = children[1].clone();
-        let body = children[2].clone();
+        let mut body = ast
+            .child_by_id("body", true)
+            .expect("Missing body in lambda_expression");
+        body.name = "body".to_string();
 
         let mut ret = Ast::new("lambda_expression");
         ret.add_child(parameters);
@@ -382,15 +388,15 @@ mod tests {
     fn test_parse_function_definition() {
         let code = r#"
         fun fibonacci(n)
-        begin
             fun helper(a, b, i)
                 if i < n
                     helper(b, a+b, i+1)
                 else
                     a
-                endif;
+                endif
+            endfun;
             helper(1, 1, 0)
-        end
+        endfun
         "#;
         parse_and_print_ast(code);
     }
@@ -399,11 +405,10 @@ mod tests {
     fn test_fun_def_with_var_param() {
         let code = r#"
         fun sum_all(a, b, rest...)
-            begin
-                def total a + b;
-                total <- total + rest.sum();
-                total
-            end;
+            def total a + b;
+            total <- total + rest.sum();
+            total
+        endfun;
         sum_all(1, 2, 3.14, 4, 5) -> result
         "#;
         parse_and_print_ast(code);
@@ -416,13 +421,13 @@ mod tests {
           x, y
 
           fun init(x, y)
-            begin
-              ego.x <- x;
-              ego.y <- y;
-            end
+            ego.x <- x;
+            ego.y <- y;
+          endfun
 
           fun move(dx, dy)
             Point(x + dx, y + dy)
+          endfun
 
         endstruct
         "#;
@@ -498,7 +503,8 @@ mod tests {
     fn test_parse_calls_of_calls() {
         let code = r#"
         fun make_greeter(before, after)
-            lambda (name) (before + name + after);
+            fun (name) before + name + after endfun
+        endfun;
         make_greeter("Hello, ", "!")("World") -> greeting
         "#;
         parse_and_print_ast(code);
@@ -515,9 +521,9 @@ mod tests {
     #[test]
     fn test_parse_spread_arguments() {
         let code = r#"
-        fun sum(a, b) a + b;
+        fun sum(a, b) a + b endfun;
         def numbers Array(1, 2);
-        sum(...numbers) -> result
+        sum(...numbers) -> result;
         "#;
         parse_and_print_ast(code);
     }

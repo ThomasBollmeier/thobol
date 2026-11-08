@@ -53,7 +53,8 @@ pub fn create_grammar() -> Grammar {
       tok("FUN"),
       tok("IDENTIFIER"),
       g.rule_ref("parameters"),
-      g.rule_ref("expression"),
+      g.rule_ref_id("item_list", "body"),
+      tok("END_FUN"),
     ])
   });
   
@@ -227,11 +228,11 @@ pub fn create_grammar() -> Grammar {
     seq(vec![
       tok("IF"),
       g.rule_ref_id("expression", "condition"),
-      g.rule_ref_id("expression", "then_branch"),
+      g.rule_ref_id("item_list", "then_branch"),
       opt(
         seq(vec![
           tok("ELSE"),
-          g.rule_ref_id("expression", "else_branch"),
+          g.rule_ref_id("item_list", "else_branch"),
         ])
       ),
       tok("END_IF"),
@@ -268,9 +269,10 @@ pub fn create_grammar() -> Grammar {
   
   grammar.add_rule("lambda_expression", false, |g| {
     seq(vec![
-      tok("LAMBDA"),
+      tok("FUN"),
       g.rule_ref("parameters"),
-      g.rule_ref("expression"),
+      g.rule_ref_id("item_list", "body"),
+      tok("END_FUN"),
     ])
   });
   

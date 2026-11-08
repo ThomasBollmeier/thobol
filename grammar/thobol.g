@@ -9,7 +9,7 @@ definition -> var_definition | fun_definition | struct_definition;
 
 var_definition -> DEF IDENTIFIER expression;
 
-fun_definition -> FUN IDENTIFIER parameters expression;
+fun_definition -> FUN IDENTIFIER parameters body#item_list END_FUN;
 
 parameters -> LEFT_PAREN
     (param#IDENTIFIER (COMMA param#IDENTIFIER)* (COMMA var_param#var_param)? |
@@ -44,7 +44,7 @@ power -> base#primary (op#CARET exponent#power)?;
 primary -> LEFT_PAREN assignment RIGHT_PAREN | if_expression | cond_expression
     | lambda_expression | atomic;
 
-if_expression -> IF condition#expression then_branch#expression (ELSE else_branch#expression)? END_IF;
+if_expression -> IF condition#expression then_branch#item_list (ELSE else_branch#item_list)? END_IF;
 
 cond_expression -> COND cond_arm* default_arm? END_COND;
 
@@ -52,7 +52,7 @@ cond_arm -> condition#expression RIGHT_FAT_ARROW result#expression;
 
 default_arm -> ELSE result#expression;
 
-lambda_expression -> LAMBDA parameters expression;
+lambda_expression -> FUN parameters body#item_list END_FUN;
 
 atomic -> INTEGER | REAL | BOOL | STRING | NIL | path_expression;
 
