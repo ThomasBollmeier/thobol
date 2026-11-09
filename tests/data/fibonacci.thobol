@@ -1,12 +1,12 @@
 fun fibonacci(n)
-  begin
     fun helper(a, b, idx)
-      if idx = n
-        a
-      else
-        helper(b, a + b, idx + 1)
-      end;
+        if idx = n
+            a
+        else
+            helper(b, a + b, idx + 1)
+        endif
+    endfun;
     helper(1, 1, 0)
-  end;
+endfun;
 
 writeln(fibonacci(10))
