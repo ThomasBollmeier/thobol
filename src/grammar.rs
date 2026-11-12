@@ -135,10 +135,10 @@ pub fn create_grammar() -> Grammar {
       seq(vec![
         g.rule_ref_id("path_expression", "target"),
         tok("LEFT_ARROW"),
-        g.rule_ref_id("comparison", "source"),
+        g.rule_ref_id("disjunction", "source"),
       ]),
       seq(vec![
-        g.rule_ref_id("comparison", "source"),
+        g.rule_ref_id("disjunction", "source"),
         opt(
           seq(vec![
             tok("RIGHT_ARROW"),
@@ -146,6 +146,30 @@ pub fn create_grammar() -> Grammar {
           ])
         ),
       ]),
+    ])
+  });
+  
+  grammar.add_rule("disjunction", false, |g| {
+    seq(vec![
+      g.rule_ref_id("conjunction", "conj"),
+      many(
+        seq(vec![
+          tok_id("OR", "op"),
+          g.rule_ref_id("conjunction", "conj"),
+        ])
+      ),
+    ])
+  });
+  
+  grammar.add_rule("conjunction", false, |g| {
+    seq(vec![
+      g.rule_ref_id("comparison", "comp"),
+      many(
+        seq(vec![
+          tok_id("AND", "op"),
+          g.rule_ref_id("comparison", "comp"),
+        ])
+      ),
     ])
   });
   
@@ -200,13 +224,26 @@ pub fn create_grammar() -> Grammar {
   
   grammar.add_rule("power", false, |g| {
     seq(vec![
-      g.rule_ref_id("primary", "base"),
+      g.rule_ref_id("unary", "base"),
       opt(
         seq(vec![
           tok_id("CARET", "op"),
           g.rule_ref_id("power", "exponent"),
         ])
       ),
+    ])
+  });
+  
+  grammar.add_rule("unary", false, |g| {
+    choice(vec![
+      seq(vec![
+        choice(vec![
+          tok_id("MINUS", "op"),
+          tok_id("NOT", "op"),
+        ]),
+        g.rule_ref_id("unary", "operand"),
+      ]),
+      g.rule_ref_id("primary", "operand"),
     ])
   });
   

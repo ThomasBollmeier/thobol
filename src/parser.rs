@@ -32,10 +32,13 @@ impl Parser {
         grammar.add_ast_transformer("expression", Self::single_child);
         grammar.add_ast_transformer("block_expression", Self::transform_block_expression);
         grammar.add_ast_transformer("assignment", Self::transform_assignment);
+        grammar.add_ast_transformer("disjunction", Self::transform_disjunction);
+        grammar.add_ast_transformer("conjunction", Self::transform_conjunction);
         grammar.add_ast_transformer("comparison", Self::transform_comparison);
         grammar.add_ast_transformer("sum", |ast| Self::transform_binary(ast, "term", "op"));
         grammar.add_ast_transformer("product", |ast| Self::transform_binary(ast, "fact", "op"));
         grammar.add_ast_transformer("power", Self::transform_power);
+        grammar.add_ast_transformer("unary", Self::transform_unary);
         grammar.add_ast_transformer("primary", Self::transform_primary);
         grammar.add_ast_transformer("if_expression", Self::transform_if_expression);
         grammar.add_ast_transformer("cond_expression", Self::transform_cond_expression);
@@ -178,6 +181,34 @@ impl Parser {
         }
     }
 
+    fn transform_disjunction(ast: Ast) -> Ast {
+        let conjunctions = ast.children_by_id("conj", true);
+
+        if conjunctions.len() == 1 {
+            return conjunctions[0].clone();
+        }
+
+        let mut ret = Ast::new("disjunction");
+        for conj in conjunctions {
+            ret.add_child(conj);
+        }
+        ret
+    }
+
+    fn transform_conjunction(ast: Ast) -> Ast {
+        let comparisons = ast.children_by_id("comp", true);
+
+        if comparisons.len() == 1 {
+            return comparisons[0].clone();
+        }
+
+        let mut ret = Ast::new("conjunction");
+        for comp in comparisons {
+            ret.add_child(comp);
+        }
+        ret
+    }
+
     fn transform_comparison(ast: Ast) -> Ast {
         let left = ast
             .child_by_id("left", true)
@@ -232,6 +263,25 @@ impl Parser {
                 ret
             }
             None => base,
+        }
+    }
+
+    fn transform_unary(ast: Ast) -> Ast {
+        let operand = ast
+            .child_by_id("operand", true)
+            .expect("Missing operand in unary");
+        match ast.child_by_id("op", true) {
+            Some(op) => {
+                let op_name = match op.name.as_str() {
+                    "MINUS" => "negate",
+                    "NOT" => "not",
+                    _ => panic!("Unexpected operator in unary: {}", op.name),
+                };
+                let mut ret = Ast::new(op_name);
+                ret.add_child(operand);
+                ret
+            }
+            None => operand,
         }
     }
 
@@ -494,7 +544,7 @@ mod tests {
     #[test]
     fn test_parse_lambda_expression() {
         let code = r#"
-        map(λ(x) (x * x), xs) -> squares
+        map(fun(x) x * x endfun, xs) -> squares
         "#;
         parse_and_print_ast(code);
     }
@@ -524,6 +574,47 @@ mod tests {
         fun sum(a, b) a + b endfun;
         def numbers Array(1, 2);
         sum(...numbers) -> result;
+        "#;
+        parse_and_print_ast(code);
+    }
+
+    #[test]
+    fn test_parse_disjunction() {
+        let code = r#"
+        true or 4 = 4 -> result;
+        "#;
+        parse_and_print_ast(code);
+    }
+
+    #[test]
+    fn test_parse_conjunction() {
+        let code = r#"
+        1 < 2 and 2 < 3 -> result;
+        "#;
+        parse_and_print_ast(code);
+    }
+
+    #[test]
+    fn test_parse_disjunction_and_conjunction() {
+        let code = r#"
+        true or false and 1 < 2 -> result;
+        "#;
+        parse_and_print_ast(code);
+    }
+
+    #[test]
+    fn test_parse_negation() {
+        let code = r#"
+        not true -> result;
+        false -> other_result;
+        "#;
+        parse_and_print_ast(code);
+    }
+
+    #[test]
+    fn test_parse_negative() {
+        let code = r#"
+        --42 -> result;
         "#;
         parse_and_print_ast(code);
     }

@@ -27,8 +27,12 @@ expression -> block_expression | assignment;
 
 block_expression -> BEGIN item_list END;
 
-assignment -> target#path_expression LEFT_ARROW source#comparison |
-    source#comparison (RIGHT_ARROW target#path_expression)?;
+assignment -> target#path_expression LEFT_ARROW source#disjunction |
+    source#disjunction (RIGHT_ARROW target#path_expression)?;
+
+disjunction -> conj#conjunction (op#OR conj#conjunction)*;
+
+conjunction -> comp#comparison (op#AND comp#comparison)*;
 
 comparison ->
     left#sum
@@ -39,7 +43,9 @@ sum -> term#product ((op#PLUS | op#MINUS) term#product)*;
 
 product -> fact#power ((op#MULTIPLY | op#DIVIDE) fact#power)*;
 
-power -> base#primary (op#CARET exponent#power)?;
+power -> base#unary (op#CARET exponent#power)?;
+
+unary -> (op#MINUS | op#NOT) operand#unary | operand#primary;
 
 primary -> LEFT_PAREN assignment RIGHT_PAREN | if_expression | cond_expression
     | lambda_expression | atomic;
